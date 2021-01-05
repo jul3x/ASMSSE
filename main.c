@@ -70,28 +70,29 @@ void printTab(Input* data)
 
 extern float* start(int w, int h, float *M, float weight);
 
-void applyCol(float T[], int row)
-{
-    int ptr = row * h_;
-    float val = M_[ptr];
-    float diff = T[0] + T[1] + M_[ptr + 1] - 3 * val;
-    M_temp_[ptr] = val + diff * weight_;
+extern void apply_col(float T[], int row);
+// void applyCol(float T[], int row)
+// {
+//     int ptr = row * h_;
+//     float val = M_[ptr];
+//     float diff = T[0] + T[1] + M_[ptr + 1] - 3 * val;
+//     M_temp_[ptr] = val + diff * weight_;
 
-    int i = 1;
-    for (; i < h_ - 1; ++i)
-    {
-        ++ptr;
-        val = M_[ptr];
-        diff = T[i - 1] + T[i] + T[i + 1] + M_[ptr + 1] + M_[ptr - 1] - 5 * val;
-        M_temp_[ptr] = val + diff * weight_;
-    }
-    ++ptr;
+//     int i = 1;
+//     for (; i < h_ - 1; ++i)
+//     {
+//         ++ptr;
+//         val = M_[ptr];
+//         diff = T[i - 1] + T[i] + T[i + 1] + M_[ptr + 1] + M_[ptr - 1] - 5 * val;
+//         M_temp_[ptr] = val + diff * weight_;
+//     }
+//     ++ptr;
 
-    val = M_[ptr];
-    diff = T[i - 1] + T[i] + M_[ptr - 1] - 3 * val;
-    M_temp_[ptr] = val + diff * weight_;
+//     val = M_[ptr];
+//     diff = T[i - 1] + T[i] + M_[ptr - 1] - 3 * val;
+//     M_temp_[ptr] = val + diff * weight_;
 
-}
+// }
 
 extern void step(float T[]);
 

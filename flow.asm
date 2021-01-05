@@ -1,6 +1,6 @@
         section .text
         global start, step
-        extern applyCol, malloc
+        extern malloc, printf
 
 start:
         push rbp
@@ -26,7 +26,7 @@ step:
         mov rbp, rsp
         sub rsp, 8                  ; stack alignment
         xor rsi, rsi
-        call applyCol               ; applyCol(T, 0)
+        call apply_col              ; apply_col(T, 0)
 
         xor r12, r12
         mov r12d, [width]           ; r12 = width
@@ -39,7 +39,7 @@ step:
 for_every_column:
         mov rdi, rbx
         mov rsi, r14
-        call applyCol               ; applyCol(&M[j * height], j + 1)
+        call apply_col               ; apply_col(&M[j * height], j + 1)
         add rbx, r13                ; next column
         inc r14
 check_if_last_column:
@@ -69,6 +69,58 @@ check_if_last_cell_to_copy:
         pop rbp
         ret
 
+
+apply_col:
+        push rbp
+        sub rsp, 8                  ; stack alignment
+        mov rbp, rsp                ; rdi = T[], rsi = row
+        mov r8d, [height]
+        imul esi, r8d               ; rsi = row * h
+        mov rax, [matrix]
+        mov rcx, [matrix_temp]
+        movss xmm3, [weight]
+
+        mov rdx, 1                  ; i = 1
+        sub r8d, 1                  ; r8d = height - 1
+
+        movlps xmm0, [rax + 4 * rsi]; xmm0 = [x, x, matrix[row * h + 1], matrix[row * h]]
+        movhps xmm0, [rdi]          ; xmm0 = [T[1], T[0], matrix[row * h + 1], matrix[row * h]]
+        movss xmm1, [minus_three_const] ; xmm1 = [x, x, x, -3]
+        mulss xmm0, xmm1            ; xmm0 = [T[1], T[0], matrix[row * h + 1], - 3 * matrix[row * h]]
+        haddps xmm0, xmm0
+        haddps xmm0, xmm0           ; xmm0 = [x, x, x, diff]
+        mulss xmm0, xmm3            ; xmm0 = [x, x, x, diff * weight]
+        movss xmm1, [rax + 4 * rsi]
+        addss xmm0, xmm1            ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
+        movss [rcx + 4 * rsi], xmm0 ; matrix_temp[row * h] = new_value
+        jmp check_if_last_cell_to_apply
+; apply_for_every_cell:
+;         inc rsi                     ; ++ptr
+
+;         movlps xmm0, [rax + 4 * rsi]     ; xmm0 = [x, x, matrix[row * h + 1], matrix[row * h]]
+;         movhps xmm0, [rdi + 4 * rdx - 4] ; xmm0 = [T[i], T[i-1], matrix[row * h + 1], matrix[row * h]]
+;         movss xmm1, [minus_five_const] ; xmm1 = [x, x, x, -5]
+;         mulss xmm1, xmm0            ; xmm1 = [T[i], T[i-1], matrix[row * h + 1], - 5 * matrix[row * h]]
+;         haddps xmm1, xmm1
+;         haddps xmm1, xmm1
+;         movss xmm2, [rdi + 4 * rdx + 4] ; xmm2 = [x, x, x, T[i+1]]
+;         addss xmm2, [rax + 4 * rsi - 4] ; xmm2 = [x, x, x, T[i+1] + matrix[row * h] - 1]
+;         addss xmm1, xmm2                ; xmm1 = [x, x, x, diff]
+;         mulss xmm1, xmm3                ; xmm1 = [x, x, x, diff * weight]
+;         movss xmm0, [rax + 4 * rsi]
+;         addss xmm0, xmm1                ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
+;         movss [rcx + 4 * rsi], xmm0     ; matrix_temp[row * h] = new_value
+
+;         inc rdx                     ; ++i
+check_if_last_cell_to_apply:
+        cmp edx, r8d
+        ; jl apply_for_every_cell
+
+        add rsp, 8                  ; cleanup
+        pop rbp
+        ret
+
+
         section .bss
 width: resd 1
 height: resd 1
@@ -76,3 +128,8 @@ weight: resd 1
 
 matrix_temp: resq 1
 matrix: resq 1
+
+        section .data
+minus_three_const   dd -3.0
+minus_five_const    dd -5.0
+format_string       db `%f\n`, 0
