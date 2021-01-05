@@ -115,7 +115,6 @@ int main(int argc, char** argv)
             printf("---------------\n");
             printTab(&data);
             step(&data.step_cols[i * data.h]);
-            printf("%d \n", a);
             usleep(200000);
         }
     }

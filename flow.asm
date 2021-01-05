@@ -11,15 +11,10 @@ start:
         movss [weight], xmm0        ; init values
         imul rdi, rsi               ; size of matrix_temp
         imul rdi, 4                 ; sizeof(float) * size of matrix_temp
-
-        push rdi                    ; malloc for temp matrix
         call malloc
         mov [matrix_temp], rax      ; rax has new pointer
-        pop rdi
-
         pop rbp
         ret
-
 
 step:
         push rbp
@@ -30,7 +25,7 @@ step:
 
         mov rbp, rsp
         sub rsp, 8                  ; stack alignment
-        xor rsi, rsi                ; TODO check if width is > 0
+        xor rsi, rsi
         call applyCol               ; applyCol(T, 0)
 
         xor r12, r12
