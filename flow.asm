@@ -69,7 +69,6 @@ check_if_last_cell_to_copy:
         pop rbp
         ret
 
-
 apply_col:
         push rbp
         sub rsp, 8                  ; stack alignment
@@ -94,27 +93,32 @@ apply_col:
         addss xmm0, xmm1            ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
         movss [rcx + 4 * rsi], xmm0 ; matrix_temp[row * h] = new_value
         jmp check_if_last_cell_to_apply
-; apply_for_every_cell:
-;         inc rsi                     ; ++ptr
+apply_for_every_cell:
+        inc rsi                     ; ++ptr
 
-;         movlps xmm0, [rax + 4 * rsi]     ; xmm0 = [x, x, matrix[row * h + 1], matrix[row * h]]
-;         movhps xmm0, [rdi + 4 * rdx - 4] ; xmm0 = [T[i], T[i-1], matrix[row * h + 1], matrix[row * h]]
-;         movss xmm1, [minus_five_const] ; xmm1 = [x, x, x, -5]
-;         mulss xmm1, xmm0            ; xmm1 = [T[i], T[i-1], matrix[row * h + 1], - 5 * matrix[row * h]]
-;         haddps xmm1, xmm1
-;         haddps xmm1, xmm1
-;         movss xmm2, [rdi + 4 * rdx + 4] ; xmm2 = [x, x, x, T[i+1]]
-;         addss xmm2, [rax + 4 * rsi - 4] ; xmm2 = [x, x, x, T[i+1] + matrix[row * h] - 1]
-;         addss xmm1, xmm2                ; xmm1 = [x, x, x, diff]
-;         mulss xmm1, xmm3                ; xmm1 = [x, x, x, diff * weight]
-;         movss xmm0, [rax + 4 * rsi]
-;         addss xmm0, xmm1                ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
-;         movss [rcx + 4 * rsi], xmm0     ; matrix_temp[row * h] = new_value
+        movlps xmm0, [rax + 4 * rsi]     ; xmm0 = [x, x, matrix[row * h + 1], matrix[row * h]]
+        movhps xmm0, [rdi + 4 * rdx - 4] ; xmm0 = [T[i], T[i-1], matrix[row * h + 1], matrix[row * h]]
+BREAK_1:
+        movss xmm1, [minus_five_const]   ; xmm1 = [x, x, x, -5]
+        mulss xmm0, xmm1                 ; xmm0 = [T[i], T[i-1], matrix[row * h + 1], - 5 * matrix[row * h]]
+BREAK_2:
+        haddps xmm0, xmm0
+        haddps xmm0, xmm0
+BREAK_3:
+        movss xmm2, [rdi + 4 * rdx + 4]  ; xmm2 = [x, x, x, T[i+1]]
+BREAK_4:
+        addss xmm2, [rax + 4 * rsi - 4]  ; xmm2 = [x, x, x, T[i+1] + matrix[row * h - 1]]
+BREAK_5:
+        addss xmm0, xmm2                ; xmm0 = [x, x, x, diff]
+        mulss xmm0, xmm3                ; xmm0 = [x, x, x, diff * weight]
+        movss xmm1, [rax + 4 * rsi]
+        addss xmm0, xmm1                ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
+        movss [rcx + 4 * rsi], xmm0     ; matrix_temp[row * h] = new_value
 
-;         inc rdx                     ; ++i
+        inc rdx                     ; ++i
 check_if_last_cell_to_apply:
         cmp edx, r8d
-        ; jl apply_for_every_cell
+        jl apply_for_every_cell
 
         add rsp, 8                  ; cleanup
         pop rbp
