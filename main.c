@@ -69,14 +69,6 @@ void printTab(Input* data)
 }
 
 extern float* start(int w, int h, float *M, float weight);
-// {
-//     w_ = w;
-//     h_ = h;
-//     M_ = M;
-//     weight_ = weight;
-
-//     M_temp_ = malloc(w * h * sizeof(float));
-// }
 
 void applyCol(float T[], int row)
 {
@@ -101,20 +93,8 @@ void applyCol(float T[], int row)
 
 }
 
-void run(float T[])
-{
-    applyCol(T, 0);
+extern void step(float T[]);
 
-    for (int j = 0; j < w_ - 1; ++j)
-    {
-        applyCol(&M_[j * h_], j + 1);
-    }
-
-    for (int i = 0; i < w_ * h_; ++i)
-    {
-        M_[i] = M_temp_[i];
-    }
-}
 
 int main(int argc, char** argv)
 {
@@ -134,7 +114,8 @@ int main(int argc, char** argv)
         {
             printf("---------------\n");
             printTab(&data);
-            run(&data.step_cols[i * data.h]);
+            step(&data.step_cols[i * data.h]);
+            printf("%d \n", a);
             usleep(200000);
         }
     }
