@@ -96,29 +96,38 @@ apply_col:
 apply_for_every_cell:
         inc rsi                     ; ++ptr
 
-        movlps xmm0, [rax + 4 * rsi]     ; xmm0 = [x, x, matrix[row * h + 1], matrix[row * h]]
-        movhps xmm0, [rdi + 4 * rdx - 4] ; xmm0 = [T[i], T[i-1], matrix[row * h + 1], matrix[row * h]]
-BREAK_1:
+        movlps xmm0, [rax + 4 * rsi]     ; xmm0 = [x, x, matrix[ptr + 1], matrix[ptr]]
+        movhps xmm0, [rdi + 4 * rdx - 4] ; xmm0 = [T[i], T[i-1], matrix[ptr + 1], matrix[ptr]]
         movss xmm1, [minus_five_const]   ; xmm1 = [x, x, x, -5]
-        mulss xmm0, xmm1                 ; xmm0 = [T[i], T[i-1], matrix[row * h + 1], - 5 * matrix[row * h]]
-BREAK_2:
+        mulss xmm0, xmm1                 ; xmm0 = [T[i], T[i-1], matrix[ptr + 1], - 5 * matrix[ptr]]
         haddps xmm0, xmm0
         haddps xmm0, xmm0
-BREAK_3:
         movss xmm2, [rdi + 4 * rdx + 4]  ; xmm2 = [x, x, x, T[i+1]]
-BREAK_4:
-        addss xmm2, [rax + 4 * rsi - 4]  ; xmm2 = [x, x, x, T[i+1] + matrix[row * h - 1]]
-BREAK_5:
+        addss xmm2, [rax + 4 * rsi - 4]  ; xmm2 = [x, x, x, T[i+1] + matrix[ptr - 1]]
         addss xmm0, xmm2                ; xmm0 = [x, x, x, diff]
         mulss xmm0, xmm3                ; xmm0 = [x, x, x, diff * weight]
         movss xmm1, [rax + 4 * rsi]
-        addss xmm0, xmm1                ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
-        movss [rcx + 4 * rsi], xmm0     ; matrix_temp[row * h] = new_value
+        addss xmm0, xmm1                ; xmm0 = [x, x, x, matrix[ptr] + diff * weight]
+        movss [rcx + 4 * rsi], xmm0     ; matrix_temp[ptr] = new_value
 
         inc rdx                     ; ++i
 check_if_last_cell_to_apply:
         cmp edx, r8d
         jl apply_for_every_cell
+
+        inc rsi                          ; ++ptr
+
+        movlps xmm0, [rdi + 4 * rdx - 4] ; xmm0 = [x, x, T[i], T[i-1]]
+        movhps xmm0, [rax + 4 * rsi - 4] ; xmm0 = [matrix[ptr], matrix[ptr - 1], T[i], T[i-1]]
+        shufps xmm0, xmm0, 93h           ; xmm0 = [matrix[ptr - 1], T[i], T[i-1], matrix[ptr]]
+        movss xmm1, [minus_three_const]  ; xmm1 = [x, x, x, -3]
+        mulss xmm0, xmm1                 ; xmm0 = [matrix[ptr - 1], T[i], T[i-1], -3 * matrix[ptr]]
+        haddps xmm0, xmm0
+        haddps xmm0, xmm0                ; xmm0 = [x, x, x, diff]
+        mulss xmm0, xmm3                 ; xmm0 = [x, x, x, diff * weight]
+        movss xmm1, [rax + 4 * rsi]
+        addss xmm0, xmm1            ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
+        movss [rcx + 4 * rsi], xmm0 ; matrix_temp[ptr] = new_value
 
         add rsp, 8                  ; cleanup
         pop rbp
