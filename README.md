@@ -4,7 +4,7 @@ Vectorized CPU operations in example project implemented in NASM x64
 ## Structure
 
 Repository consists of:
-* `flow.asm` - file with defintion of two global functions (`start` and `step`) and one helper function (`applyCol`)
+* `flow.asm` - file with defintion of two global functions (`start` and `step`) and one helper function (`apply_col`)
 * `main.c` - file consists of a program which tests `start` and `step`
  functions
 * `Makefile`
@@ -17,7 +17,7 @@ Repository consists of:
 ## Usage
 ```bash
 make
-./game tests/small.txt
+./flow tests/small.txt
 ```
 Run parameter should contain path to appropriate test file with initial description of matrix with floating-point type numbers and list of input columns.
 Testing program loads file, initializes the game by calling `start` function 

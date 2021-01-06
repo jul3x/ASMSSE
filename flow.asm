@@ -22,14 +22,17 @@ step:
         push r12
         push r13
         push r14                    ; preserved registers
-
         mov rbp, rsp
         sub rsp, 8                  ; stack alignment
-        xor rsi, rsi
-        call apply_col              ; apply_col(T, 0)
 
         xor r12, r12
         mov r12d, [width]           ; r12 = width
+        test r12, r12
+        jz end_step                 ; if width == 0 -> jump to end
+
+        xor rsi, rsi
+        call apply_col              ; apply_col(T, 0)
+
         xor r13, r13
         mov r13d, [height]
         imul r13, 4                 ; r13 = height * sizeof(float)
@@ -60,7 +63,7 @@ copy_every_cell:
 check_if_last_cell_to_copy:
         cmp r13, r12
         jl copy_every_cell
-
+end_step:
         add rsp, 8                  ; cleanup
         pop r14
         pop r13
@@ -81,6 +84,9 @@ apply_col:
 
         mov rdx, 1                  ; i = 1
         sub r8d, 1                  ; r8d = height - 1
+
+        test r8d, r8d
+        jz apply_col_height_1
 
         movlps xmm0, [rax + 4 * rsi]; xmm0 = [x, x, matrix[row * h + 1], matrix[row * h]]
         movhps xmm0, [rdi]          ; xmm0 = [T[1], T[0], matrix[row * h + 1], matrix[row * h]]
@@ -128,7 +134,15 @@ check_if_last_cell_to_apply:
         movss xmm1, [rax + 4 * rsi]
         addss xmm0, xmm1            ; xmm0 = [x, x, x, matrix[row * h] + diff * weight]
         movss [rcx + 4 * rsi], xmm0 ; matrix_temp[ptr] = new_value
-
+        jmp end_apply_col
+apply_col_height_1:
+        movss xmm0, [rax + 4 * rsi] ; xmm0 = [x, x, x, matrix[row * h]]
+        movss xmm1, [rdi]           ; xmm1 = [x, x, x, T[0]]
+        subss xmm1, xmm0            ; xmm1 = [x, x, x, T[0] - matrix[row * h]]
+        mulss xmm1, xmm3            ; xmm1 = [x, x, x, weight * (T[0] - matrix[row * h])]
+        addss xmm1, xmm0            ; xmm1 = [x, x, x, matrix[row * h] + weight * (T[0] - matrix[row * h])]
+        movss [rcx + 4 * rsi], xmm1 ; matrix_temp[row * h] = new_value
+end_apply_col:
         add rsp, 8                  ; cleanup
         pop rbp
         ret

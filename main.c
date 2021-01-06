@@ -2,12 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
-float* M_;
-float* M_temp_;
-int w_, h_;
-float weight_;
-
 typedef struct SInput {
     int w, h;
     float* M;
@@ -68,34 +62,8 @@ void printTab(Input* data)
     }
 }
 
-extern float* start(int w, int h, float *M, float weight);
-
-extern void apply_col(float T[], int row);
-// void applyCol(float T[], int row)
-// {
-//     int ptr = row * h_;
-//     float val = M_[ptr];
-//     float diff = T[0] + T[1] + M_[ptr + 1] - 3 * val;
-//     M_temp_[ptr] = val + diff * weight_;
-
-//     int i = 1;
-//     for (; i < h_ - 1; ++i)
-//     {
-//         ++ptr;
-//         val = M_[ptr];
-//         diff = T[i - 1] + T[i] + T[i + 1] + M_[ptr + 1] + M_[ptr - 1] - 5 * val;
-//         M_temp_[ptr] = val + diff * weight_;
-//     }
-//     ++ptr;
-
-//     val = M_[ptr];
-//     diff = T[i - 1] + T[i] + M_[ptr - 1] - 3 * val;
-//     M_temp_[ptr] = val + diff * weight_;
-
-// }
-
+extern void start(int w, int h, float *M, float weight);
 extern void step(float T[]);
-
 
 int main(int argc, char** argv)
 {
@@ -104,25 +72,23 @@ int main(int argc, char** argv)
         Input data;
         loadTab(argv[1], &data);
 
-        w_ = data.w;
-        h_ = data.h;
-        M_ = data.M;
-        weight_ = data.weight;
+        start(data.w, data.h, data.M, data.weight);
 
-        M_temp_ = start(data.w, data.h, data.M, data.weight);
-
+        printf("Loaded matrix:\n");
+        printTab(&data);
         for (int i = 0; i < data.steps; ++i)
         {
-            printf("---------------\n");
-            printTab(&data);
+            printf("----------------------------------\n");
+            printf("Step %d:\n", i + 1);
             step(&data.step_cols[i * data.h]);
+            printTab(&data);
             usleep(200000);
         }
     }
     else
     {
-        printf("Usage: ./game <file_path>\n");
-        printf("Example: ./game tests/glider.txt\n\n");
+        printf("Usage: ./flow <file_path>\n");
+        printf("Example: ./flow tests/small.txt\n\n");
     }
 
     return 0;
